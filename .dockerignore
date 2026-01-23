@@ -1,0 +1,14 @@
+.git
+.gitignore
+logs/*.log
+logs/*.json
+__pycache__
+*.py[cod]
+.env
+.venv
+venv/
+.idea/
+.vscode/
+.DS_Store
+README.md
+LICENSE
