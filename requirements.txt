@@ -1,0 +1,17 @@
+# SSH Honeypot
+# ------------
+# Good news: No dependencies needed!
+# This project runs on Python's standard library alone.
+#
+# Just make sure you have Python 3.7+ installed:
+#   python --version
+#
+# Optional extras if you want to get fancy later:
+#
+#   geoip2          - Map attacker IPs to countries
+#   requests        - Integrate with threat intel APIs
+#   rich            - Pretty terminal output
+#   flask           - Build a monitoring dashboard
+#
+# Install optional deps:
+#   pip install geoip2 requests rich flask
