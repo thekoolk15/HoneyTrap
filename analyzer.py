@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Log Analyzer for SSH Honeypot
+Log Analyzer for HoneyTrap
 
-This script analyzes honeypot logs to extract insights about:
+Analyzes honeypot logs to extract insights about:
 - Attack frequency and timing patterns
 - Source IP addresses and geographic distribution
 - Common attack patterns and techniques
-- Potential credential stuffing attempts
+- Credential stuffing attempts
 
 Usage:
     python analyzer.py                    # Analyze default log file
@@ -18,8 +18,8 @@ import json
 import os
 import argparse
 from datetime import datetime
-from collections import Counter, defaultdict
-from typing import Dict, List, Tuple
+from collections import Counter
+from typing import Dict, List
 from config import LOG_FILE
 
 
@@ -79,6 +79,7 @@ def analyze_json_logs(logs: List[dict]) -> dict:
         'connections': 0,
         'unique_ips': set(),
         'ip_frequency': Counter(),
+        'port_frequency': Counter(),
         'hourly_distribution': Counter(),
         'data_received_events': 0,
         'potential_credentials': []
@@ -91,8 +92,10 @@ def analyze_json_logs(logs: List[dict]) -> dict:
             if log.get('status') == 'connected':
                 analysis['connections'] += 1
                 ip = log.get('source_ip', 'unknown')
+                port = log.get('target_port', 'unknown')
                 analysis['unique_ips'].add(ip)
                 analysis['ip_frequency'][ip] += 1
+                analysis['port_frequency'][port] += 1
                 
                 # Extract hour for time distribution
                 try:
@@ -109,7 +112,8 @@ def analyze_json_logs(logs: List[dict]) -> dict:
             if decoded and len(decoded) > 2:
                 analysis['potential_credentials'].append({
                     'ip': log.get('source_ip', 'unknown'),
-                    'data': decoded[:100]  # Truncate for display
+                    'port': log.get('target_port', 'unknown'),
+                    'data': decoded[:100]
                 })
     
     return analysis
@@ -123,7 +127,7 @@ def print_analysis_report(analysis: dict) -> None:
         analysis: Dictionary containing analysis results
     """
     print("\n" + "=" * 60)
-    print("🔍 SSH HONEYPOT LOG ANALYSIS REPORT")
+    print("🍯 HONEYTRAP LOG ANALYSIS REPORT")
     print("=" * 60)
     
     print(f"\n📊 OVERVIEW")
@@ -133,8 +137,15 @@ def print_analysis_report(analysis: dict) -> None:
     print(f"  Unique IP Addresses: {len(analysis['unique_ips'])}")
     print(f"  Data Receive Events: {analysis['data_received_events']}")
     
+    if analysis['port_frequency']:
+        print(f"\n🪤 ATTACKS BY PORT")
+        print("-" * 40)
+        for port, count in analysis['port_frequency'].most_common():
+            bar = "█" * min(count, 30)
+            print(f"  Port {port:5} | {count:4} | {bar}")
+    
     if analysis['ip_frequency']:
-        print(f"\n🎯 TOP 10 SOURCE IPs (Most Active Attackers)")
+        print(f"\n🎯 TOP 10 SOURCE IPs")
         print("-" * 40)
         for ip, count in analysis['ip_frequency'].most_common(10):
             bar = "█" * min(count, 30)
@@ -149,10 +160,10 @@ def print_analysis_report(analysis: dict) -> None:
             print(f"  {hour:02d}:00 | {count:4} | {bar}")
     
     if analysis['potential_credentials']:
-        print(f"\n🔑 POTENTIAL CREDENTIAL ATTEMPTS (Sample)")
+        print(f"\n🔑 CAPTURED DATA (Sample)")
         print("-" * 40)
         for i, cred in enumerate(analysis['potential_credentials'][:10]):
-            print(f"  [{i+1}] IP: {cred['ip']}")
+            print(f"  [{i+1}] IP: {cred['ip']} | Port: {cred['port']}")
             print(f"      Data: {repr(cred['data'][:50])}")
             print()
     
@@ -178,12 +189,12 @@ def print_analysis_report(analysis: dict) -> None:
 def main():
     """Main entry point for the analyzer."""
     parser = argparse.ArgumentParser(
-        description='Analyze SSH Honeypot logs for attack patterns'
+        description='Analyze HoneyTrap logs for attack patterns'
     )
     parser.add_argument(
         '-f', '--file',
         default=LOG_FILE,
-        help='Path to log file (default: logs/honeypot.log)'
+        help='Path to log file (default: logs/honeytrap.log)'
     )
     parser.add_argument(
         '--json',
@@ -193,7 +204,7 @@ def main():
     
     args = parser.parse_args()
     
-    print("\n🍯 SSH Honeypot Log Analyzer")
+    print("\n🍯 HoneyTrap Log Analyzer")
     print(f"   Analyzing: {args.file}")
     
     if args.json:
@@ -203,7 +214,7 @@ def main():
             analysis = analyze_json_logs(logs)
             print_analysis_report(analysis)
     else:
-        # For JSON analysis by default if JSON file exists
+        # Default to JSON analysis if JSON file exists
         json_file = args.file.replace('.log', '.json')
         if os.path.exists(json_file):
             logs = load_json_logs(json_file)
@@ -211,7 +222,7 @@ def main():
                 analysis = analyze_json_logs(logs)
                 print_analysis_report(analysis)
         else:
-            print("❌ No JSON log file found. Run the honeypot first to generate logs.")
+            print("❌ No JSON log file found. Run HoneyTrap first to generate logs.")
             print(f"   Expected location: {json_file}")
 
 

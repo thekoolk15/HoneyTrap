@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
-Enhanced SSH Honeypot - Captures login credentials on multiple ports
-WARNING: Educational purposes only!
+HoneyTrap (Credential Capture Edition)
+Captures login credentials on multiple ports
 
+WARNING: Educational purposes only!
 This is a standalone version with hardcoded configuration.
 """
 
@@ -19,8 +20,8 @@ from datetime import datetime
 # =============================================================================
 
 HOST = '0.0.0.0'
-PORTS = [2222, 8022, 2022]  # Multiple ports to listen on
-LOG_FILE = 'logs/honeypot.log'
+PORTS = [2222, 8022, 2022]
+LOG_FILE = 'logs/honeytrap.log'
 CREDENTIALS_FILE = 'logs/credentials.json'
 
 
@@ -38,7 +39,7 @@ logging.basicConfig(
         logging.StreamHandler()
     ]
 )
-logger = logging.getLogger('SSHHoneypot')
+logger = logging.getLogger('HoneyTrap')
 
 
 # =============================================================================
@@ -76,7 +77,7 @@ def handle_client(client_socket: socket.socket, address: tuple, port: int) -> No
         port: The honeypot port that received the connection
     """
     ip = address[0]
-    logger.warning(f"🚨 CONNECTION on port {port} from {ip}:{address[1]}")
+    logger.warning(f"🚨 CAUGHT on port {port} from {ip}:{address[1]}")
     
     try:
         client_socket.settimeout(60)
@@ -87,13 +88,12 @@ def handle_client(client_socket: socket.socket, address: tuple, port: int) -> No
         # Wait for client banner
         client_socket.recv(1024)
         
-        # Close SSH and reopen as fake telnet-style prompt
-        # This tricks simple bots into sending plaintext creds
+        # Fake login prompt to trick simple bots
         client_socket.send(b"\r\n")
         client_socket.send(b"Welcome to Ubuntu 18.04.5 LTS\r\n")
         client_socket.send(b"\r\n")
         
-        # Fake login prompt
+        # Capture credentials
         client_socket.send(b"login: ")
         username = client_socket.recv(1024).decode('utf-8', errors='ignore').strip()
         
@@ -114,7 +114,7 @@ def handle_client(client_socket: socket.socket, address: tuple, port: int) -> No
         logger.error(f"Error on port {port}: {e}")
     finally:
         client_socket.close()
-        logger.info(f"🔌 Connection on port {port} from {ip} closed")
+        logger.info(f"🔌 Released {ip} from port {port}")
 
 
 def start_listener(port: int) -> None:
@@ -130,7 +130,7 @@ def start_listener(port: int) -> None:
         server.bind((HOST, port))
         server.listen(100)
         
-        logger.info(f"🍯 Listening on {HOST}:{port}")
+        logger.info(f"🪤 Trap set on {HOST}:{port}")
         
         while True:
             try:
@@ -155,9 +155,10 @@ def print_banner() -> None:
     print("""
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
-    ║   🍯 SSH HONEYPOT WITH CREDENTIAL CAPTURE 🍯              ║
+    ║   🍯 HONEYTRAP 🪤  [Credential Capture Edition]           ║
     ║                                                           ║
-    ║   Multi-port edition | Educational purposes only!         ║
+    ║   Multi-port | Captures credentials                       ║
+    ║   For educational purposes only!                          ║
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
     """)
@@ -173,7 +174,7 @@ def main():
     print(f"  Credentials: {CREDENTIALS_FILE}")
     print()
     
-    logger.info(f"🍯 Starting honeypot on {len(PORTS)} port(s)...")
+    logger.info(f"🍯 HoneyTrap starting on {len(PORTS)} port(s)...")
     
     # Start a listener thread for each port
     threads = []
@@ -182,14 +183,14 @@ def main():
         thread.start()
         threads.append(thread)
     
-    logger.info("Waiting for connections... (Press Ctrl+C to stop)")
+    logger.info("Waiting for prey... (Press Ctrl+C to stop)")
     
     # Keep main thread alive
     try:
         while True:
             threading.Event().wait(1)
     except KeyboardInterrupt:
-        logger.info("\n🛑 Shutting down honeypot...")
+        logger.info("\n🛑 Shutting down HoneyTrap...")
 
 
 if __name__ == "__main__":

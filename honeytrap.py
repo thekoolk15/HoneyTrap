@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-SSH Honeypot - A fake SSH server that logs intrusion attempts
+HoneyTrap - A multi-port intrusion detection honeypot
 Author: thekoolk15
-Purpose: Educational cybersecurity project to understand attack patterns
+Purpose: Cybersecurity learning and attack analysis
 
-This honeypot simulates a vulnerable SSH server to attract and log
+HoneyTrap simulates vulnerable services to attract and log
 connection attempts from potential attackers.
 
-WARNING: This is for educational purposes only. Deploy responsibly
+WARNING: For educational purposes only. Deploy responsibly
 and only on networks you own or have permission to monitor.
 """
 
@@ -23,15 +23,15 @@ from config import (
 )
 
 
-class SSHHoneypot:
+class HoneyTrap:
     """
-    A low-interaction SSH honeypot that simulates an SSH server.
+    A multi-port honeypot that simulates vulnerable services.
     
-    This class creates a fake SSH server that:
-    - Listens for incoming connections on multiple ports
-    - Presents a realistic SSH banner to attackers
-    - Logs all connection attempts with detailed information
-    - Captures any data sent by the attacker (credentials, commands)
+    This class creates fake servers that:
+    - Listen for incoming connections on multiple ports
+    - Present realistic banners to attackers
+    - Log all connection attempts with detailed information
+    - Capture any data sent by the attacker
     
     Attributes:
         host (str): The IP address to bind to
@@ -42,7 +42,7 @@ class SSHHoneypot:
     
     def __init__(self, host: str = HOST, ports: list = PORTS):
         """
-        Initialize the honeypot with host and port settings.
+        Initialize HoneyTrap with host and port settings.
         
         Args:
             host: IP address to bind to (default: 0.0.0.0 for all interfaces)
@@ -79,7 +79,7 @@ class SSHHoneypot:
                 logging.StreamHandler()
             ]
         )
-        self.logger = logging.getLogger('SSHHoneypot')
+        self.logger = logging.getLogger('HoneyTrap')
         
     def _log_json(self, event_type: str, data: dict) -> None:
         """
@@ -122,7 +122,7 @@ class SSHHoneypot:
             # Store socket reference
             self.server_sockets[port] = server_socket
             
-            self.logger.info(f"🍯 Listening on {self.host}:{port}")
+            self.logger.info(f"🪤 Trap set on {self.host}:{port}")
             
             self._log_json('listener_start', {
                 'host': self.host,
@@ -153,7 +153,7 @@ class SSHHoneypot:
     
     def start(self) -> None:
         """
-        Start the honeypot server on all configured ports.
+        Start HoneyTrap on all configured ports.
         
         This method:
         1. Sets the running flag
@@ -163,7 +163,7 @@ class SSHHoneypot:
         try:
             self.running = True
             
-            self.logger.info(f"🍯 Starting honeypot on {len(self.ports)} port(s)...")
+            self.logger.info(f"🍯 HoneyTrap starting on {len(self.ports)} port(s)...")
             
             self._log_json('server_start', {
                 'host': self.host,
@@ -181,7 +181,7 @@ class SSHHoneypot:
                 thread.start()
                 listener_threads.append(thread)
             
-            self.logger.info("Waiting for connections... (Press Ctrl+C to stop)")
+            self.logger.info("Waiting for prey... (Press Ctrl+C to stop)")
             
             # Keep main thread alive
             while self.running:
@@ -191,13 +191,13 @@ class SSHHoneypot:
                     break
                     
         except KeyboardInterrupt:
-            self.logger.info("\n🛑 Shutting down honeypot...")
+            self.logger.info("\n🛑 Shutting down HoneyTrap...")
         finally:
             self.stop()
             
     def stop(self) -> None:
         """
-        Gracefully stop the honeypot server.
+        Gracefully stop HoneyTrap.
         
         Closes all server sockets and sets the running flag to False.
         """
@@ -207,11 +207,11 @@ class SSHHoneypot:
         for port, sock in self.server_sockets.items():
             try:
                 sock.close()
-                self.logger.info(f"Closed listener on port {port}")
+                self.logger.info(f"Closed trap on port {port}")
             except:
                 pass
                 
-        self.logger.info("Honeypot stopped.")
+        self.logger.info("HoneyTrap stopped.")
         self._log_json('server_stop', {})
             
     def _handle_connection(self, client_socket: socket.socket, 
@@ -233,7 +233,7 @@ class SSHHoneypot:
         ip_address, src_port = client_address
         
         # Log the connection attempt with target port info
-        self.logger.warning(f"🚨 CONNECTION on port {port} from {ip_address}:{src_port}")
+        self.logger.warning(f"🚨 CAUGHT on port {port} from {ip_address}:{src_port}")
         
         self._log_json('connection', {
             'target_port': port,
@@ -289,7 +289,7 @@ class SSHHoneypot:
             
         finally:
             client_socket.close()
-            self.logger.info(f"🔌 Connection on port {port} from {ip_address}:{src_port} closed")
+            self.logger.info(f"🔌 Released {ip_address}:{src_port} from port {port}")
             
             self._log_json('connection', {
                 'target_port': port,
@@ -301,13 +301,13 @@ class SSHHoneypot:
 
 
 def print_banner() -> None:
-    """Print a cool ASCII banner for the honeypot."""
+    """Print the HoneyTrap ASCII banner."""
     banner = """
     ╔═══════════════════════════════════════════════════════════╗
     ║                                                           ║
-    ║   🍯 SSH HONEYPOT - Intrusion Detection System 🍯        ║
+    ║   🍯 HONEYTRAP 🪤                                         ║
     ║                                                           ║
-    ║   A cybersecurity learning project                        ║
+    ║   Multi-port intrusion detection system                   ║
     ║   For educational purposes only!                          ║
     ║                                                           ║
     ╚═══════════════════════════════════════════════════════════╝
@@ -316,7 +316,7 @@ def print_banner() -> None:
 
 
 def main():
-    """Main entry point for the honeypot application."""
+    """Main entry point for HoneyTrap."""
     print_banner()
     
     # Display configuration
@@ -325,9 +325,9 @@ def main():
     print(f"  Log File: {LOG_FILE}")
     print()
     
-    # Create and start the honeypot
-    honeypot = SSHHoneypot()
-    honeypot.start()
+    # Create and start HoneyTrap
+    trap = HoneyTrap()
+    trap.start()
 
 
 if __name__ == "__main__":

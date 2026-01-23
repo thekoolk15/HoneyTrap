@@ -1,5 +1,5 @@
-# SSH Honeypot
-# ------------
+# HoneyTrap
+# ---------
 # Good news: No dependencies needed!
 # This project runs on Python's standard library alone.
 #

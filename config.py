@@ -1,5 +1,5 @@
 """
-Configuration settings for the SSH Honeypot.
+Configuration settings for HoneyTrap.
 
 Modify these settings to customize the honeypot behavior.
 All sensitive settings should be reviewed before deployment.
@@ -30,7 +30,7 @@ MAX_CONNECTIONS = 100
 # =============================================================================
 
 # Path to the log file (relative to script location)
-LOG_FILE = 'logs/honeypot.log'
+LOG_FILE = 'logs/honeytrap.log'
 
 # Enable JSON logging for easier parsing and analysis
 # Creates a .json file alongside the regular log
@@ -58,7 +58,7 @@ FAKE_SSH_BANNER = 'SSH-2.0-OpenSSH_7.4\r\n'
 """
 IMPORTANT SECURITY CONSIDERATIONS:
 
-1. ISOLATION: Always run this honeypot in an isolated environment
+1. ISOLATION: Always run HoneyTrap in an isolated environment
    (VM, container, or dedicated machine) to prevent lateral movement
    if somehow compromised.
 
@@ -66,7 +66,7 @@ IMPORTANT SECURITY CONSIDERATIONS:
    to monitor. Unauthorized monitoring may violate laws.
 
 3. PRODUCTION: This is a LOW-interaction honeypot for learning.
-   For production use, consider Cowrie, Kippo, or other mature solutions.
+   For production use, consider additional hardening.
 
 4. MONITORING: Regularly review logs and set up alerts for suspicious
    activity patterns.
