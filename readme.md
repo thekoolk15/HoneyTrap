@@ -1,34 +1,31 @@
 # 🍯 HoneyTrap 🪤
 
-A Python-based multi-port honeypot that attracts and logs intrusion attempts. Built for learning cybersecurity concepts hands-on.
+A multi-port SSH honeypot that attracts attackers and logs everything they do. Built with Python, zero external dependencies.
+
+![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue?logo=python&logoColor=white)
+![Zero Dependencies](https://img.shields.io/badge/dependencies-zero-brightgreen)
+![Docker Ready](https://img.shields.io/badge/docker-ready-2496ED?logo=docker&logoColor=white)
+![MIT License](https://img.shields.io/badge/license-MIT-yellow)
 
 ## What's This About?
 
-Ever wondered how hackers try to break into servers? This project lets you watch it happen in real-time (safely). 
+Ever wondered how hackers try to break into servers? HoneyTrap lets you watch it happen in real-time (safely).
 
-HoneyTrap pretends to be a vulnerable server. When attackers connect, thinking they found an easy target, we silently log everything they do. It's like setting up a security camera for your network.
+It pretends to be a vulnerable SSH server. When attackers connect, thinking they found an easy target, we silently log everything they do. It's basically a security camera for your network.
 
-## Features
-
-- **Multi-port listening** - Monitor multiple ports simultaneously (2222, 8022, 2022, etc.)
-- **Credential capture** - Optional advanced mode that logs usernames and passwords
-- **Detailed logging** - JSON + text logs with timestamps, IPs, and raw data
-- **Docker support** - One command deployment with docker-compose
-- **Cross-platform** - Works on Linux, macOS, and Windows
-- **Zero dependencies** - Pure Python standard library
+Deploy it on a public server and you'll see real attack traffic within minutes. The internet is a wild place.
 
 ## Quick Start
 
-### Option 1: Run directly
+### Run directly
 
 ```bash
 git clone https://github.com/thekoolk15/HoneyTrap.git
 cd HoneyTrap
-mkdir -p logs
 python honeytrap.py
 ```
 
-### Option 2: Run with Docker
+### Run with Docker
 
 ```bash
 git clone https://github.com/thekoolk15/HoneyTrap.git
@@ -37,130 +34,151 @@ docker-compose up -d --build
 docker-compose logs -f
 ```
 
-## Project Structure
+## Features
+
+- **Multi-port listening** — Monitor multiple ports at once (2222, 8022, 2022, etc.)
+- **Credential capture** — Advanced mode that fakes a login prompt to grab usernames & passwords
+- **SSH client detection** — Tells apart real SSH clients from simple bots so credential logs stay clean
+- **Thread-safe logging** — Uses mutex locks so logs don't get corrupted when multiple attackers connect at once
+- **Dual logging** — Human-readable `.log` files + machine-parseable JSON for analysis
+- **Built-in analyzer** — CLI reporting tool for attack patterns, top IPs, hourly breakdown
+- **Docker support** — One-command deployment with docker-compose
+- **Zero dependencies** — Runs on Python standard library only
+
+## How It Works
 
 ```
-HoneyTrap/
-├── honeytrap.py              # Main honeypot
-├── honeytrap_with_creds.py   # Credential capture version
-├── config.py                 # Configuration settings
-├── analyzer.py               # Log analysis tool
-├── Dockerfile                # Docker image definition
-├── docker-compose.yml        # Docker compose config
-├── requirements.txt          # Dependencies (none required!)
-└── logs/                     # Attack logs stored here
+                    ┌─────────────────────────┐
+                    │    Attacker / Scanner    │
+                    └────────────┬────────────┘
+                                 │ TCP connect
+                    ┌────────────▼────────────┐
+                    │    Socket Listeners      │
+                    │  :2222  :8022  :2022     │
+                    └────────────┬────────────┘
+                                 │ accept() → spawn thread
+                    ┌────────────▼────────────┐
+                    │  Connection Handler      │
+                    │  ┌────────────────────┐  │
+                    │  │ Send SSH Banner    │  │
+                    │  │ SSH-2.0-OpenSSH_7.4│  │
+                    │  └────────┬───────────┘  │
+                    │           │               │
+                    │  ┌────────▼───────────┐  │
+                    │  │ Capture & Log Data │  │
+                    │  └────────┬───────────┘  │
+                    └───────────┬──────────────┘
+                                │
+              ┌─────────────────┼─────────────────┐
+              ▼                 ▼                  ▼
+      honeytrap.log     honeytrap.json     credentials.json
+       (human)           (machine)          (creds only)
+              │                 │
+              └────────┬────────┘
+                       ▼
+               analyzer.py 📊
 ```
 
 ## Two Flavors
 
 ### Basic (`honeytrap.py`)
-Low-interaction honeypot. Logs connections and SSH handshake data. Safe and simple.
+
+Low-interaction honeypot. Logs connections and SSH handshake data. Simple and safe.
 
 ```bash
 python honeytrap.py
 ```
 
-### Advanced (`honeytrap_with_creds.py`)
-Fakes a login prompt to capture credentials. Standalone with hardcoded config.
+### Credential Capture (`honeytrap_with_creds.py`)
+
+This one goes a step further — it fakes a login prompt to trick bots into giving up their credentials:
+
+```
+SSH-2.0-OpenSSH_7.4
+Welcome to Ubuntu 18.04.5 LTS
+
+login: █
+Password: █
+
+Login incorrect
+```
+
+Captured creds get logged to `credentials.json`. Real SSH clients (that send binary KEX packets) are detected automatically and skipped — so you don't end up with garbled binary junk in your credential logs.
 
 ```bash
 python honeytrap_with_creds.py
 ```
 
+`CredentialHoneyTrap` is a subclass of `HoneyTrap` — it inherits the multi-port listener, thread-safe logging, and config. It only overrides the connection handler.
+
+## Project Structure
+
+```
+HoneyTrap/
+├── honeytrap.py              # Main honeypot (HoneyTrap class)
+├── honeytrap_with_creds.py   # Credential capture version (subclass)
+├── config.py                 # Configuration
+├── analyzer.py               # Log analysis tool
+├── Dockerfile
+├── docker-compose.yml
+├── requirements.txt
+└── logs/
+    ├── honeytrap.log         # Text log
+    ├── honeytrap.json        # JSON log
+    └── credentials.json      # Captured credentials
+```
+
 ## Configuration
 
-Edit `config.py` to customize:
+Edit `config.py`:
 
 ```python
-HOST = '0.0.0.0'              # Listen on all interfaces
-PORTS = [2222, 8022, 2022]    # Add or remove ports as needed
-FAKE_SSH_BANNER = 'SSH-2.0-OpenSSH_7.4\r\n'  # What attackers see
+HOST = '0.0.0.0'                              # Listen on all interfaces
+PORTS = [2222, 8022, 2022]                     # Ports to monitor
+MAX_CONNECTIONS = 100                          # Backlog per port
+LOG_FILE = 'logs/honeytrap.log'                # Log file path
+CREDENTIALS_FILE = 'logs/credentials.json'     # Credential log
+FAKE_SSH_BANNER = 'SSH-2.0-OpenSSH_7.4\r\n'   # Banner attackers see
+ENABLE_JSON_LOGGING = True                     # JSON logging on/off
 ```
+
+### Banner Ideas
+
+Pick a banner that looks like a real (slightly outdated) server:
+
+| Banner | Looks Like |
+|--------|-----------|
+| `SSH-2.0-OpenSSH_7.4` | CentOS/RHEL 7 (default) |
+| `SSH-2.0-OpenSSH_8.2p1 Ubuntu-4ubuntu0.1` | Ubuntu 20.04 |
+| `SSH-2.0-OpenSSH_7.9p1 Debian-10+deb10u2` | Debian 10 |
+| `SSH-2.0-OpenSSH_6.6.1` | Old and tempting |
 
 ### Port Ideas
 
-| Port | Why Use It |
-|------|------------|
-| 22 | The real deal (needs root) |
+| Port | Why |
+|------|-----|
+| 22 | Standard SSH (needs root) |
 | 2222 | Classic alternative |
 | 8022 | Looks like Docker SSH |
-| 2022 | Subtle, less suspicious |
-
-## 🐳 Docker Deployment
-
-### Start the honeypot
-
-```bash
-docker-compose up -d --build
-```
-
-### View live logs
-
-```bash
-docker-compose logs -f
-```
-
-### Stop the honeypot
-
-```bash
-docker-compose down
-```
-
-### Run credential capture version in Docker
-
-```bash
-docker run -d \
-  --name honeytrap-creds \
-  -p 2222:2222 \
-  -p 8022:8022 \
-  -p 2022:2022 \
-  -v $(pwd)/logs:/app/logs \
-  ssh-honeypot-honeytrap \
-  python honeytrap_with_creds.py
-```
+| 2022 | Subtle |
 
 ## Testing Locally
 
-Terminal 1:
+**Terminal 1** — Start the honeypot:
 ```bash
 python honeytrap.py
-# or
-docker-compose up
 ```
 
-Terminal 2:
+**Terminal 2** — Poke it:
 ```bash
+# Plain TCP
 nc localhost 2222
-# or
+
+# SSH
 ssh anything@localhost -p 2222
 ```
 
-Watch the logs light up! 🎆
-
-## Analyzing Attacks
-
-After collecting some data:
-
-```bash
-python analyzer.py --json
-```
-
-You'll get a breakdown of:
-- Top attacking IPs
-- Attacks per port
-- Attack frequency by hour
-- Captured data samples
-
-## What You'll Learn
-
-- Socket programming in Python
-- Multi-threaded network servers
-- How SSH handshakes work
-- Real attack patterns and techniques
-- Security logging best practices
-- Docker containerization
-
-## Sample Output
+### Sample Output
 
 ```
 🍯 HoneyTrap starting on 3 port(s)...
@@ -175,20 +193,64 @@ Waiting for prey... (Press Ctrl+C to stop)
 🔌 Released 192.168.1.50:58432 from port 2222
 ```
 
-## Going Public?
+## 🐳 Docker
 
-If you deploy this on a real server (AWS, DigitalOcean, etc.), you'll see actual attack traffic within minutes. The internet is a wild place.
+```bash
+# Start
+docker-compose up -d --build
 
-**But first:**
+# Watch logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+Run the credential version in Docker:
+
+```bash
+docker run -d \
+  --name honeytrap-creds \
+  -p 2222:2222 -p 8022:8022 -p 2022:2022 \
+  -v $(pwd)/logs:/app/logs \
+  ssh-honeypot-honeytrap \
+  python honeytrap_with_creds.py
+```
+
+## Analyzing Attacks
+
+```bash
+python analyzer.py --json
+```
+
+Gives you top attacking IPs, attacks per port, hourly breakdown, captured data samples, and some insights (like flagging IPs with too many attempts).
+
+## What You'll Learn
+
+- Socket programming in Python
+- Multi-threaded servers and thread safety
+- How SSH handshakes and key exchange work
+- Real-world attack patterns
+- Structured logging for security analysis
+- Docker containerization
+- OOP — class inheritance for extensible tools
+
+## ⚠️ Heads Up
+
+If you deploy this on a real server, you'll get actual attacks fast. Be smart about it:
+
 - Use an isolated VM or container
-- Don't put this on a production network
-- Check local laws about monitoring network traffic
-- Keep your actual SSH on a different, non-standard port
+- Don't run this on a production network
+- Keep your real SSH on a different port
+- Check your local laws about network monitoring
+- This is a low-interaction honeypot — for prod use check out [Cowrie](https://github.com/cowrie/cowrie)
 
 ## Roadmap
 
 - [x] Multi-port SSH honeypot
 - [x] Credential capture mode
+- [x] SSH client detection
+- [x] Thread-safe logging
 - [x] Log analyzer
 - [x] Docker support
 - [ ] FTP honeypot
@@ -196,17 +258,19 @@ If you deploy this on a real server (AWS, DigitalOcean, etc.), you'll see actual
 - [ ] Web dashboard
 - [ ] IP geolocation
 - [ ] Real-time alerts
+- [ ] Log rotation
 
 ## Resources
 
-- [Cowrie](https://github.com/cowrie/cowrie) - Production-grade SSH honeypot
-- [Awesome Honeypots](https://github.com/paralax/awesome-honeypots) - Community list of honeypot tools
-- [The Honeynet Project](https://www.honeynet.org/) - Research org behind honeypot tech
+- [Cowrie](https://github.com/cowrie/cowrie) — Production-grade SSH honeypot
+- [Awesome Honeypots](https://github.com/paralax/awesome-honeypots) — Curated honeypot list
+- [The Honeynet Project](https://www.honeynet.org/) — Research org behind honeypot tech
+- [T-Pot](https://github.com/telekom-security/tpotce) — Multi-honeypot platform
 
 ## License
 
-MIT - Do whatever you want with it. Learn something cool.
+MIT — do whatever you want with it.
 
 ---
 
-*Set the trap. Catch the prey.* 🪤
+*Set the trap. Catch the prey. 🪤*
