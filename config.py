@@ -24,6 +24,12 @@ PORTS = [2222, 8022, 2022]
 # Maximum number of queued connections per port
 MAX_CONNECTIONS = 100
 
+# Maximum concurrent connection handler threads (prevents thread exhaustion DoS)
+MAX_THREADS = 50
+
+# Maximum connections allowed from a single IP before dropping (rate limiting)
+MAX_CONNECTIONS_PER_IP = 10
+
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -38,6 +44,10 @@ ENABLE_JSON_LOGGING = True
 
 # Path to credential capture log (used by honeytrap_with_creds.py)
 CREDENTIALS_FILE = 'logs/credentials.json'
+
+# Log rotation settings (prevents disk exhaustion)
+LOG_MAX_BYTES = 10 * 1024 * 1024   # 10MB per log file
+LOG_BACKUP_COUNT = 5                # keep 5 rotated backups
 
 
 # =============================================================================

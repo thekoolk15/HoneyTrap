@@ -101,7 +101,7 @@ def analyze_json_logs(logs: List[dict]) -> dict:
                 try:
                     timestamp = datetime.fromisoformat(log.get('timestamp', ''))
                     analysis['hourly_distribution'][timestamp.hour] += 1
-                except:
+                except (ValueError, TypeError):
                     pass
                     
         elif event_type == 'data_received':

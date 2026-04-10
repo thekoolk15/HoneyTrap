@@ -6,12 +6,13 @@ LABEL version="1.0"
 
 WORKDIR /app
 
-COPY honeytrap.py .
-COPY honeytrap_with_creds.py .
-COPY config.py .
-COPY analyzer.py .
+COPY *.py .
 
-RUN mkdir -p logs
+RUN mkdir -p logs && \
+    useradd -r -s /bin/false honeytrap && \
+    chown -R honeytrap:honeytrap /app
+
+USER honeytrap
 
 EXPOSE 2222 8022 2022
 

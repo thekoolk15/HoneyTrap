@@ -15,7 +15,7 @@ import json
 from datetime import datetime
 
 from honeytrap import HoneyTrap
-from config import HOST, PORTS, LOG_FILE, CREDENTIALS_FILE
+from config import HOST, PORTS, LOG_FILE, CREDENTIALS_FILE, FAKE_SSH_BANNER
 
 
 class CredentialHoneyTrap(HoneyTrap):
@@ -62,7 +62,7 @@ class CredentialHoneyTrap(HoneyTrap):
             client_socket.settimeout(60)
 
             # Send fake SSH banner to appear as a real SSH server
-            client_socket.send(b"SSH-2.0-OpenSSH_7.4\r\n")
+            client_socket.send(FAKE_SSH_BANNER.encode('utf-8'))
 
             # Wait for client response (SSH banner or plain text)
             client_data = client_socket.recv(1024)
@@ -82,7 +82,7 @@ class CredentialHoneyTrap(HoneyTrap):
                 self._log_json('ssh_client_detected', {
                     'target_port': port,
                     'source_ip': ip,
-                    'client_banner': decoded
+                    'client_banner': self._sanitize(decoded)
                 })
                 return
 
@@ -93,10 +93,14 @@ class CredentialHoneyTrap(HoneyTrap):
 
             # Capture credentials
             client_socket.send(b"login: ")
-            username = client_socket.recv(1024).decode('utf-8', errors='ignore').strip()
+            username = self._sanitize(
+                client_socket.recv(1024).decode('utf-8', errors='ignore').strip()
+            )
 
             client_socket.send(b"Password: ")
-            password = client_socket.recv(1024).decode('utf-8', errors='ignore').strip()
+            password = self._sanitize(
+                client_socket.recv(1024).decode('utf-8', errors='ignore').strip()
+            )
 
             # Log captured credentials
             if username or password:
