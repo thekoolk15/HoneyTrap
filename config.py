@@ -36,6 +36,9 @@ LOG_FILE = 'logs/honeytrap.log'
 # Creates a .json file alongside the regular log
 ENABLE_JSON_LOGGING = True
 
+# Path to credential capture log (used by honeytrap_with_creds.py)
+CREDENTIALS_FILE = 'logs/credentials.json'
+
 
 # =============================================================================
 # DECEPTION CONFIGURATION
