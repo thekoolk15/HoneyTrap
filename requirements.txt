@@ -1,20 +1,15 @@
-HoneyTrap
- ---------
- No dependencies needed! Runs on Python standard library.
-
- Python version: 3.7+
-   python --version
-
- Docker (optional):
-   docker --version
-   docker-compose --version
-
- Optional extras for future enhancements:
-
-   geoip2          - Map attacker IPs to countries
-   requests        - Integrate with threat intel APIs
-   rich            - Pretty terminal output
-   flask           - Build a monitoring dashboard
-
- Install optional deps:
-   pip install geoip2 requests rich flask
+# HoneyTrap - No external dependencies required
+# Runs entirely on the Python 3.7+ standard library
+#
+# Python version: 3.7+
+#   python --version
+#
+# Docker (optional):
+#   docker --version
+#   docker-compose --version
+#
+# Optional extras for future enhancements:
+#   pip install geoip2        # Map attacker IPs to countries
+#   pip install requests      # Integrate with threat intel APIs
+#   pip install rich          # Pretty terminal output
+#   pip install flask         # Build a monitoring dashboard
