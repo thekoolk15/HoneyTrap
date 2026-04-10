@@ -52,6 +52,7 @@ class HoneyTrap:
         self.ports = ports
         self.server_sockets = {}
         self.running = False
+        self._log_lock = threading.Lock()
         self._setup_logging()
         
     def _setup_logging(self) -> None:
@@ -96,8 +97,9 @@ class HoneyTrap:
                 'event_type': event_type,
                 **data
             }
-            with open(json_log_file, 'a') as f:
-                f.write(json.dumps(log_entry) + '\n')
+            with self._log_lock:
+                with open(json_log_file, 'a') as f:
+                    f.write(json.dumps(log_entry) + '\n')
     
     def _start_listener(self, port: int) -> None:
         """
@@ -208,7 +210,7 @@ class HoneyTrap:
             try:
                 sock.close()
                 self.logger.info(f"Closed trap on port {port}")
-            except:
+            except Exception:
                 pass
                 
         self.logger.info("HoneyTrap stopped.")
